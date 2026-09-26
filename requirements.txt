@@ -1,6 +1,8 @@
 fastapi>=0.100.0
 uvicorn>=0.20.0
 streamlit>=1.30.0
+folium>=0.15.0
+streamlit-folium>=0.18.0
 xarray>=2023.0.0
 netcdf4>=1.6.0
 scipy>=1.10.0
