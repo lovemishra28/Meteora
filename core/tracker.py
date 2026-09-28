@@ -12,15 +12,15 @@ class AnomalyTracker:
     extreme pressure drops aur cyclonic vorticity detect karta hai,
     aur dynamic 4D bounding boxes construct karta hai.
     """
-    def __init__(self, dataset_path: str = "data/biparjoy_sample.nc"):
-        # Support both relative and absolute paths
-        if not os.path.exists(dataset_path):
-            alt_path = os.path.join(os.path.dirname(__file__), "..", dataset_path)
-            if os.path.exists(alt_path):
-                dataset_path = alt_path
+    def __init__(self, dataset_path: Optional[str] = None):
+        from .data_loader import load_biparjoy_data, REAL_CANONICAL, SYNTHETIC_CANONICAL
+        if dataset_path is not None and os.path.exists(dataset_path) and os.path.getsize(dataset_path) > 0:
+            self.dataset_path = dataset_path
+            self.ds = xr.open_dataset(dataset_path)
+        else:
+            self.ds = load_biparjoy_data()
+            self.dataset_path = REAL_CANONICAL if os.path.exists(REAL_CANONICAL) else SYNTHETIC_CANONICAL
 
-        self.dataset_path = dataset_path
-        self.ds = xr.open_dataset(dataset_path)
         self.times = self.ds.time.values
         
     def detect_storm_center(self, time_idx: int) -> Dict:

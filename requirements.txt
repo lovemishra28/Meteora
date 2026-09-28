@@ -10,3 +10,16 @@ numpy>=1.24.0
 pandas>=2.0.0
 plotly>=5.15.0
 pydantic>=2.0.0
+requests>=2.31.0
+
+# Real data ingestion (ERA5 via Copernicus Climate Data Store)
+cdsapi>=0.7.0
+
+# Physics-Guided Diffusion Model (PGDM) — Stage 2
+# CPU-only build (~200 MB); replace with CUDA build for GPU acceleration:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Live GFS data via OpenDAP
+pydap>=3.3.0

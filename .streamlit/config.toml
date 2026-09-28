@@ -1,0 +1,14 @@
+# Static base theme (Streamlit loads this once at startup and cannot switch it
+# at runtime). The in-app Dark/Light toggle is driven by injected CSS variables
+# in app.py; this base only sets the initial/native-widget palette. Keep it
+# "dark" to match the app's default theme.
+[theme]
+base = "dark"
+primaryColor = "#D67557"
+backgroundColor = "#000000"
+secondaryBackgroundColor = "#0A0A0A"
+textColor = "#F2F2F2"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"

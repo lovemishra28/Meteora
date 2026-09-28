@@ -1,11 +1,16 @@
 # api.py
 import os
+import threading
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from core.tracker import AnomalyTracker
 from utils.geojson_gen import generate_cyclone_geojson
 import uvicorn
+
+# Live ingestion state
+_ingest_lock   = threading.Lock()
+_ingest_running = False
 
 # FastAPI App Initialization
 app = FastAPI(
@@ -43,7 +48,10 @@ def get_disaster_alert(time_idx: int):
         raise HTTPException(status_code=500, detail="Data engine offline. Pehle data_loader.py run karein.")
     
     if time_idx < 0 or time_idx >= len(tracker.times):
-        raise HTTPException(status_code=404, detail="Time index range se bahar hai. Valid range: 0-6.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Time index range se bahar hai. Valid range: 0-{len(tracker.times) - 1}."
+        )
 
     try:
         # Core tracker se storm ka exact location aur details nikalna
@@ -121,5 +129,97 @@ def get_geojson_layers(time_idx: int = 0):
         bbox=bbox_list
     )
 
+
+# ─── Live Ingestion Endpoints ─────────────────────────────────────────────────
+
+@app.post("/api/v1/ingest")
+async def trigger_live_ingest(background_tasks: BackgroundTasks, force: bool = False):
+    """
+    Trigger a live weather data ingestion run in the background.
+
+    Sources tried (in order):
+      1. Open-Meteo (free JSON API, no auth)
+      2. GFS NOMADS OpenDAP (NCEP operational NWP)
+      3. ERA5 CDS (requires ~/.cdsapirc credentials)
+      4. Static biparjoy_real.nc (always-available fallback)
+
+    Results cached to data/live_latest.nc for 3 hours.
+    Subsequent calls within the TTL return cached status immediately.
+    """
+    global _ingest_running
+    with _ingest_lock:
+        if _ingest_running:
+            return {"status": "running", "message": "Ingestion already in progress."}
+        _ingest_running = True
+
+    def _run():
+        global _ingest_running
+        try:
+            from core.live_ingestion import LiveIngestionPipeline
+            pipeline = LiveIngestionPipeline()
+            pipeline.fetch(force=force)
+        except Exception as exc:
+            print(f"[api/ingest] background task error: {exc}")
+        finally:
+            with _ingest_lock:
+                _ingest_running = False
+
+    background_tasks.add_task(_run)
+    return {
+        "status":  "started",
+        "message": "Live ingestion started in background. Poll /api/v1/ingest/status for result.",
+        "force":   force,
+    }
+
+
+@app.get("/api/v1/ingest/status")
+def get_ingest_status():
+    """
+    Returns the status of the most recent live ingestion run.
+    """
+    global _ingest_running
+    try:
+        from core.live_ingestion import LiveIngestionPipeline
+        status = LiveIngestionPipeline().get_status()
+    except Exception as exc:
+        status = {"error": str(exc)}
+    status["currently_running"] = _ingest_running
+    return status
+
+
+@app.get("/api/v1/model/status")
+def get_model_status():
+    """
+    Returns the status of the Physics-Guided Diffusion Model (PGDM).
+    Shows whether the real DDIM model is active or scipy mock is running.
+    """
+    weights_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "weights", "meteora_diff_biparjoy.pt"
+    )
+    weights_exist = os.path.exists(weights_path)
+    weights_size_mb = os.path.getsize(weights_path) / 1e6 if weights_exist else 0
+
+    try:
+        from core.downscaler import DownscalerEngine
+        mode = DownscalerEngine().mode
+    except Exception:
+        mode = "UNKNOWN"
+
+    return {
+        "mode":            mode,
+        "weights_exist":   weights_exist,
+        "weights_size_mb": round(weights_size_mb, 1),
+        "weights_path":    weights_path,
+        "description": (
+            "Physics-Guided Diffusion Model (PGDM) active — real DDIM inference"
+            if mode == "PGDM_REAL" else
+            "scipy mock active — run scripts/train_diffusion.py to activate PGDM"
+        ),
+        "train_command":  "python scripts/train_diffusion.py --epochs 50",
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

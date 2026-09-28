@@ -1,0 +1,19 @@
+{
+  "fetched_at": "2026-09-28T03:22:56.485160+00:00",
+  "source": "LIVE_OPENMETEO",
+  "timesteps": 72,
+  "lat_range": [
+    5.0,
+    30.0
+  ],
+  "lon_range": [
+    55.0,
+    100.0
+  ],
+  "variables": [
+    "mslp",
+    "u10",
+    "v10",
+    "precipitation"
+  ]
+}
