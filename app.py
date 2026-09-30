@@ -64,7 +64,7 @@ _LIGHT = {
 }
 THEMES = {"dark": _DARK, "light": _LIGHT}
 
-st.session_state.setdefault("dark_mode", True)
+st.session_state.setdefault("dark_mode", False)
 IS_DARK = st.session_state["dark_mode"]
 T = THEMES["dark" if IS_DARK else "light"]
 
@@ -101,13 +101,95 @@ st.markdown("""
 <style>
 .stApp{ background:var(--bg); color:var(--tx);
   font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
-.block-container{ padding-top:1.1rem; padding-bottom:2.2rem; max-width:1520px; }
+.block-container{ padding-top:5.5rem; padding-bottom:2.2rem; max-width:1520px; }
 
 /* strip Streamlit chrome for a product feel */
 #MainMenu{visibility:hidden;} footer{visibility:hidden;}
-[data-testid="stToolbar"]{display:none;} [data-testid="stDecoration"]{display:none;}
+[data-testid="stDecoration"]{display:none;}
 [data-testid="stStatusWidget"]{display:none;}
-header[data-testid="stHeader"]{background:transparent;height:0;}
+
+/* Make header container transparent & allow expand button to show */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    height: 0 !important;
+    overflow: visible !important;
+    z-index: 1000002 !important;
+}
+
+[data-testid="stToolbar"] {
+    background: transparent !important;
+    height: 0 !important;
+    overflow: visible !important;
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* Hide other toolbar items (deploy button, status, menu) but keep expand button visible */
+[data-testid="stToolbar"] > div:not(:has([data-testid="stExpandSidebarButton"])) {
+    display: none !important;
+}
+
+/* Sidebar Reopen (Expand) Button styling */
+[data-testid="stExpandSidebarButton"],
+button[data-testid="stExpandSidebarButton"] {
+    position: fixed !important;
+    top: 15px !important;
+    left: 14px !important;
+    z-index: 1000005 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    background: var(--panel) !important;
+    border: 1.5px solid var(--border) !important;
+    border-radius: 9px !important;
+    color: var(--accent) !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 12px rgba(214,117,87,0.35) !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-testid="stExpandSidebarButton"]:hover,
+button[data-testid="stExpandSidebarButton"]:hover {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    box-shadow: 0 0 18px rgba(214,117,87,0.6) !important;
+    transform: scale(1.06) !important;
+}
+
+[data-testid="stExpandSidebarButton"] span,
+[data-testid="stExpandSidebarButton"] svg {
+    color: var(--accent) !important;
+    fill: var(--accent) !important;
+    font-size: 1.35rem !important;
+}
+
+/* Sidebar collapse button when open */
+button[data-testid="stSidebarCollapseButton"] {
+    color: var(--accent) !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+button[data-testid="stSidebarCollapseButton"]:hover {
+    background: var(--accent-soft) !important;
+    color: var(--accent) !important;
+}
+
+/* top header */
+.top-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 70px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    z-index: 999998;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem 0 4.2rem;
+}
 
 /* typography */
 html,body,.stApp,p,span,div,label{ font-size:15px; }
@@ -115,16 +197,114 @@ html,body,.stApp,p,span,div,label{ font-size:15px; }
 .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
 
 /* sidebar */
-section[data-testid="stSidebar"]{ background:var(--side) !important; border-right:1px solid var(--border); }
+section[data-testid="stSidebar"]{ background:var(--side) !important; border-right:1px solid var(--border); top: 70px !important; height: calc(100vh - 70px) !important; }
 section[data-testid="stSidebar"] *{ color:var(--tx); }
-section[data-testid="stSidebar"] .block-container{ padding-top:1.4rem; }
+section[data-testid="stSidebar"] .block-container{ 
+    padding-top:1.4rem; 
+    padding-bottom:1.5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 85px);
+}
+
+/* Active Stage Glowing Header Card */
+.active-stage-glow-box {
+    background: linear-gradient(135deg, rgba(214,117,87,0.18) 0%, rgba(10,10,10,0.6) 100%);
+    border: 1.5px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 8px 0 12px;
+    box-shadow: 0 0 22px rgba(214,117,87,0.55), inset 0 0 12px rgba(214,117,87,0.18);
+    text-align: center;
+}
+.glow-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--tx3);
+    font-weight: 700;
+}
+.glow-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #FFFFFF;
+    text-shadow: 0 0 14px #D67557, 0 0 28px rgba(214,117,87,0.95), 0 0 42px #D67557;
+    margin: 4px 0 3px;
+}
+.glow-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+/* Snake Timeline Scroll Container */
+.snake-scroll-container {
+    max-height: 440px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 4px 10px 4px;
+    border-radius: 11px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    margin: 6px 0 12px;
+}
+.snake-scroll-container::-webkit-scrollbar {
+    width: 5px;
+}
+.snake-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--border2);
+    border-radius: 4px;
+}
+.snake-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* Buttons inside the Snake timeline */
+section[data-testid="stSidebar"] div[data-testid="stButton"] button {
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    padding: 6px 2px !important;
+    letter-spacing: 0.02em !important;
+    border-radius: 8px !important;
+    min-height: 33px !important;
+}
+
+/* Primary Active Button in Snake */
+section[data-testid="stSidebar"] button[kind="primary"],
+section[data-testid="stSidebar"] button[data-testid="baseButton-primary"] {
+    background: var(--accent) !important;
+    color: #FFFFFF !important;
+    border: 1.5px solid #FFAB91 !important;
+    box-shadow: 0 0 16px rgba(214,117,87,0.9), 0 0 30px rgba(214,117,87,0.5) !important;
+    font-weight: 800 !important;
+    text-shadow: 0 0 8px rgba(0,0,0,0.8) !important;
+    transform: scale(1.05) !important;
+}
+
+/* Secondary Inactive Button in Snake */
+section[data-testid="stSidebar"] button[kind="secondary"],
+section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"] {
+    background: var(--panel2) !important;
+    color: var(--tx2) !important;
+    border: 1px solid var(--border) !important;
+    transition: all 0.2s ease !important;
+}
+section[data-testid="stSidebar"] button[kind="secondary"]:hover,
+section[data-testid="stSidebar"] button[data-testid="baseButton-secondary"]:hover {
+    border-color: var(--accent) !important;
+    color: #FFFFFF !important;
+    background: var(--accent-soft) !important;
+    box-shadow: 0 0 12px rgba(214,117,87,0.3) !important;
+}
 
 /* brand */
-.brand{ display:flex; align-items:center; gap:14px; margin-bottom:2px; }
+.brand{ display:flex; align-items:center; gap:14px; margin-bottom:0; }
 .brand-mark{ width:40px;height:40px;border:1.5px solid var(--accent);border-radius:10px;
   display:flex;align-items:center;justify-content:center; flex:0 0 auto; }
-.brand-name{ font-size:1.55rem; font-weight:800; letter-spacing:0.16em; color:var(--tx); line-height:1; }
-.brand-tag{ font-size:0.7rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--tx3); margin-top:5px; }
+.brand-name{ font-size:1.55rem; font-weight:800; letter-spacing:0.16em; color:var(--tx); line-height:1; padding-top:2px; }
 
 /* status bar */
 .statusbar{ display:flex; flex-wrap:wrap; gap:10px; margin:16px 0 2px; }
@@ -220,9 +400,59 @@ div[data-baseweb="popover"] li:hover { background:var(--accent-soft) !important;
 [data-testid="stThumbValue"]{ color:var(--accent) !important; }
 [data-testid="stRadio"] label, [data-testid="stRadio"] label p{ color:var(--tx2) !important; }
 
-/* theme toggle: keep it compact and right-aligned in the header */
-.themebar [data-testid="stWidgetLabel"]{ margin-bottom:0 !important; }
-.themebar{ display:flex; justify-content:flex-end; padding-top:8px; }
+/* Theme Toggle Button in Header (Lucide/Material Icon, Large & High Contrast) */
+div.st-key-theme_toggle_btn {
+    position: fixed !important;
+    top: 13px !important;
+    right: 2rem !important;
+    z-index: 1000000 !important;
+    width: auto !important;
+    margin: 0 !important;
+}
+
+div.st-key-theme_toggle_btn button {
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    min-width: 44px !important;
+    border-radius: 11px !important;
+    background: var(--panel) !important;
+    border: 1.5px solid var(--border2) !important;
+    color: var(--accent) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18) !important;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+div.st-key-theme_toggle_btn button:hover {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    box-shadow: 0 0 18px rgba(214,117,87,0.55) !important;
+    transform: scale(1.06) !important;
+}
+
+div.st-key-theme_toggle_btn button:active {
+    transform: scale(0.96) !important;
+}
+
+div.st-key-theme_toggle_btn button span {
+    font-size: 1.55rem !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--accent) !important;
+}
+
+div.st-key-theme_toggle_btn svg {
+    width: 24px !important;
+    height: 24px !important;
+    fill: var(--accent) !important;
+}
 
 /* misc */
 hr{ border-color:var(--border) !important; margin:15px 0 !important; }
@@ -291,6 +521,12 @@ def compute_trajectory(_tracker):
 tracker, downscaler = init_system()
 provenance = dataset_provenance(tracker.ds)
 mode = downscaler.mode
+variable = st.session_state.setdefault("downscaling_var", "u10")
+
+_src_label = ("ERA5 Reanalysis" if "ERA5" in provenance
+              else "Live Feed" if "LIVE" in provenance else "Simulated")
+_model_label = ("Diffusion · active" if mode == "PGDM_REAL"
+                else "Checkpoint loaded" if mode == "PGDM_UNTRAINED" else "Simulation mode")
 
 # Live feed status (best-effort)
 feed_src, feed_fresh, feed_time = "none", False, "—"
@@ -304,54 +540,116 @@ try:
 except Exception:
     pass
 
+# ── 30-Stage Mapping & Helpers ──────────────────────────────────────────────
+NUM_STAGES = 30
+
+def stage_to_timestep(s: int, total_times: int) -> int:
+    return int(round((s - 1) * (total_times - 1) / (NUM_STAGES - 1)))
+
+def timestep_to_stage(t: int, total_times: int) -> int:
+    return int(round(t * (NUM_STAGES - 1) / (total_times - 1))) + 1
 
 # ── Sidebar : control panel ──────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown(
-        '<div class="brand"><div class="brand-mark">'
-        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D67557" '
-        'stroke-width="1.7" stroke-linecap="round"><path d="M12 12c0-3 3-4 5-3M12 12c0 3-3 4-5 3'
-        'M12 12c-3 0-4-3-3-5M12 12c3 0 4 3 3 5"/><circle cx="12" cy="12" r="1.5" fill="#D67557" '
-        'stroke="none"/></svg></div><div><div class="brand-name">METEORA</div>'
-        '<div class="brand-tag">Cyclone Console</div></div></div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="sec">Controls</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec" style="margin-top: 0;">Controls</div>', unsafe_allow_html=True)
     n_times = len(tracker.times)
-    time_idx = st.slider("Forecast timestep", 0, n_times - 1,
-                         value=min(30, n_times - 1), step=1,
-                         help=f"{n_times} ERA5 six-hourly steps across the cyclone lifecycle")
+    
+    st.session_state.setdefault("time_idx", min(30, n_times - 1))
+    if "active_stage" not in st.session_state:
+        st.session_state["active_stage"] = timestep_to_stage(st.session_state["time_idx"], n_times)
+
+    cur_stage = st.session_state["active_stage"]
+    cur_t_idx = stage_to_timestep(cur_stage, n_times)
+    st.session_state["time_idx"] = cur_t_idx
+    time_idx = cur_t_idx
     ts_label = pd.to_datetime(str(tracker.times[time_idx])).strftime("%d %b %Y · %H:%M UTC")
-    st.markdown(
-        f'<div class="chip" style="width:100%;justify-content:center;margin:-4px 0 6px">'
-        f'<span class="dot"></span>VALID&nbsp;<b>{ts_label}</b></div>', unsafe_allow_html=True)
 
-    variable = st.selectbox(
-        "Downscaling field",
-        ["u10", "v10", "mslp", "precipitation"],
-        format_func=lambda x: {"u10": "U-Wind (km/h)", "v10": "V-Wind (km/h)",
-                               "mslp": "Pressure (hPa)", "precipitation": "Rainfall (mm/h)"}[x],
-    )
-
-    st.markdown('<div class="sec" style="margin-top:22px">System</div>', unsafe_allow_html=True)
-    _src_label = ("ERA5 Reanalysis" if "ERA5" in provenance
-                  else "Live Feed" if "LIVE" in provenance else "Simulated")
-    _model_label = ("Diffusion · active" if mode == "PGDM_REAL"
-                    else "Checkpoint loaded" if mode == "PGDM_UNTRAINED" else "Simulation mode")
+    # Glowing Active Stage Box (prominent glowing stage name)
     st.markdown(
-        chip("Data source", _src_label, mute=("ERA5" not in provenance and "LIVE" not in provenance)) +
-        chip("Downscaler", _model_label, mute=(mode != "PGDM_REAL")) +
-        chip("Live feed", (feed_src.replace("LIVE_", "").title() if feed_fresh else "stale"),
-             live=feed_fresh, mute=not feed_fresh),
+        f'<div class="active-stage-glow-box">'
+        f'<div class="glow-label">Active Forecast Stage</div>'
+        f'<div class="glow-title">STAGE {cur_stage}</div>'
+        f'<div class="glow-meta">{ts_label} &middot; Lead T+{cur_t_idx*6:03d}h</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
-    st.caption(f"Feed updated {feed_time} UTC" if feed_fresh else "Live ingest idle")
-    if st.button("Refresh live feed"):
+
+    # Vertical Navigation Buttons
+    nav_col1, nav_col2 = st.columns(2)
+    with nav_col1:
+        if st.button("▲ Prev Stage", key="btn_prev_stg", use_container_width=True):
+            new_s = max(1, cur_stage - 1)
+            st.session_state["active_stage"] = new_s
+            st.session_state["time_idx"] = stage_to_timestep(new_s, n_times)
+            st.rerun()
+    with nav_col2:
+        if st.button("▼ Next Stage", key="btn_next_stg", use_container_width=True):
+            new_s = min(NUM_STAGES, cur_stage + 1)
+            st.session_state["active_stage"] = new_s
+            st.session_state["time_idx"] = stage_to_timestep(new_s, n_times)
+            st.rerun()
+
+    st.markdown('<div style="font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--tx3);font-weight:700;margin:10px 0 6px;">Curved Snake Timeline (30 Stages)</div>', unsafe_allow_html=True)
+
+    # Build snake rows (10 rows x 3 columns)
+    # Row 0: 1 -> 2 -> 3 (turns right)
+    # Row 1: 6 <- 5 <- 4 (turns left)
+    # Row 2: 7 -> 8 -> 9 (turns right)
+    # ...
+    snake_rows = []
+    for r in range(10):
+        start = r * 3 + 1
+        if r % 2 == 0:
+            row_stages = [start, start + 1, start + 2]
+        else:
+            row_stages = [start + 2, start + 1, start]
+        snake_rows.append((r, row_stages))
+
+    st.markdown('<div class="snake-scroll-container">', unsafe_allow_html=True)
+    for r, row_stages in snake_rows:
+        cols = st.columns(3)
+        for c_i, s_num in enumerate(row_stages):
+            is_active = (s_num == cur_stage)
+            with cols[c_i]:
+                if st.button(
+                    f"Stage {s_num}",
+                    key=f"stg_{s_num}",
+                    type="primary" if is_active else "secondary",
+                    use_container_width=True,
+                ):
+                    st.session_state["active_stage"] = s_num
+                    st.session_state["time_idx"] = stage_to_timestep(s_num, n_times)
+                    st.rerun()
+        if r < 9:
+            if r % 2 == 0:
+                st.markdown(
+                    '<div style="display:flex;justify-content:flex-end;padding-right:22px;margin:-5px 0 -4px;">'
+                    '<svg width="34" height="15" viewBox="0 0 34 15" fill="none">'
+                    '<path d="M 6 0 C 30 0, 30 15, 6 15" stroke="#D67557" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.85"/>'
+                    '</svg></div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<div style="display:flex;justify-content:flex-start;padding-left:22px;margin:-5px 0 -4px;">'
+                    '<svg width="34" height="15" viewBox="0 0 34 15" fill="none">'
+                    '<path d="M 28 0 C 4 0, 4 15, 28 15" stroke="#D67557" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.85"/>'
+                    '</svg></div>',
+                    unsafe_allow_html=True,
+                )
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Bottom area for Refresh button
+    st.markdown('<div style="margin-top:auto;padding-top:20px;"></div>', unsafe_allow_html=True)
+    if st.button("Refresh live feed", use_container_width=True):
         try:
             from core.live_ingestion import run_live_ingest
             with st.spinner("Fetching (Open-Meteo → GFS → ERA5)…"):
                 run_live_ingest(force=True)
+            st.cache_resource.clear()
+            st.rerun()
+        except Exception as e:
+            st.caption(f"Ingest unavailable: {e}")
             st.cache_resource.clear()
             st.rerun()
         except Exception as e:
@@ -370,22 +668,25 @@ alert_color  = alert_hex(alert_level)
 b            = storm["bbox"]
 
 
-# ── Header + theme toggle + status bar ────────────────────────────────────────
-_brand_html = (
-    '<div class="brand"><div class="brand-mark">'
-    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D67557" '
-    'stroke-width="1.7" stroke-linecap="round"><path d="M12 12c0-3 3-4 5-3M12 12c0 3-3 4-5 3'
-    'M12 12c-3 0-4-3-3-5M12 12c3 0 4 3 3 5"/><circle cx="12" cy="12" r="1.5" fill="#D67557" '
-    'stroke="none"/></svg></div><div><div class="brand-name">METEORA</div>'
-    '<div class="brand-tag">Cyclone Intelligence &middot; Arabian Sea Basin</div></div></div>'
-)
-h_left, h_right = st.columns([6, 1], gap="small")
-with h_left:
-    st.markdown(_brand_html, unsafe_allow_html=True)
-with h_right:
-    st.markdown('<div class="themebar">', unsafe_allow_html=True)
-    st.toggle("Dark mode", key="dark_mode")
-    st.markdown('</div>', unsafe_allow_html=True)
+# ── Top Header & Theme Toggle ─────────────────────────────────────────────────
+st.markdown("""
+<div class="top-header">
+    <div class="brand">
+        <div class="brand-mark">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D67557" stroke-width="1.7" stroke-linecap="round"><path d="M12 12c0-3 3-4 5-3M12 12c0 3-3 4-5 3M12 12c-3 0-4-3-3-5M12 12c3 0 4 3 3 5"/><circle cx="12" cy="12" r="1.5" fill="#D67557" stroke="none"/></svg>
+        </div>
+        <div class="brand-name">METEORA</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Theme switcher button (Lucide / Material icon without font text)
+theme_icon = ":material/light_mode:" if IS_DARK else ":material/dark_mode:"
+theme_tip = "Switch to Light Mode" if IS_DARK else "Switch to Dark Mode"
+
+if st.button("", icon=theme_icon, key="theme_toggle_btn", help=theme_tip):
+    st.session_state["dark_mode"] = not IS_DARK
+    st.rerun()
 
 st.markdown(
     '<div class="statusbar">'
@@ -564,8 +865,23 @@ def field_scale(name):
 
 # ── TAB : Downscaling ─────────────────────────────────────────────────────────
 with tab_ds:
-    st.markdown('<div class="sec">12 km &rarr; 5 km reconstruction <span class="n">Stage 2 · '
-                + field_label + '</span></div>', unsafe_allow_html=True)
+    col_ds_hdr, col_ds_sel = st.columns([3, 1])
+    with col_ds_hdr:
+        st.markdown('<div class="sec">12 km &rarr; 5 km reconstruction <span class="n">Stage 2 · '
+                    + field_label + '</span></div>', unsafe_allow_html=True)
+    with col_ds_sel:
+        new_ds_var = st.selectbox(
+            "Downscaling field",
+            ["u10", "v10", "mslp", "precipitation"],
+            index=["u10", "v10", "mslp", "precipitation"].index(variable),
+            key="downscaling_var_select",
+            format_func=lambda x: {"u10": "U-Wind (km/h)", "v10": "V-Wind (km/h)",
+                                   "mslp": "Pressure (hPa)", "precipitation": "Rainfall (mm/h)"}[x],
+            label_visibility="collapsed",
+        )
+        if new_ds_var != variable:
+            st.session_state["downscaling_var"] = new_ds_var
+            st.rerun()
 
     cnn_drop = metrics["original_peak"] - metrics["cnn_peak"]
     st.markdown(
